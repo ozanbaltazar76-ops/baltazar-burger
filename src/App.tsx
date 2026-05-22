@@ -389,7 +389,8 @@ const INITIAL_ITEMS: Item[] = [
 // --- Constants ---
 const ADMIN_EMAILS = [
   "adam.osama60@gmail.com",
-  "ozanbaltazar76@gmail.com"
+  "ozanbaltazar76@gmail.com",
+  "hakan.4444fb@gmail.com"
 ];
 const translationModel = "gemini-2.5-flash-lite";
 
