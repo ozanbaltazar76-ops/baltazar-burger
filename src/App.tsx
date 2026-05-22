@@ -387,7 +387,10 @@ const INITIAL_ITEMS: Item[] = [
 ];
 
 // --- Constants ---
-const ADMIN_EMAILS = ["adam.osama60@gmail.com"];
+const ADMIN_EMAILS = [
+  "adam.osama60@gmail.com",
+  "ozanbaltazar76@gmail.com"
+];
 const translationModel = "gemini-2.5-flash-lite";
 
 // --- Error Handling ---
@@ -427,7 +430,7 @@ const cleanJson = (text: string) => {
 const getTimeElapsed = (timestamp: number, lang: string = 'en') => {
   const diff = Date.now() - timestamp;
   const mins = Math.floor(diff / 60000);
-  
+
   if (lang === 'tr') {
     if (mins < 1) return 'Az önce';
     if (mins < 60) return `${mins}dk önce`;
@@ -435,7 +438,7 @@ const getTimeElapsed = (timestamp: number, lang: string = 'en') => {
     if (hours < 24) return `${hours}s önce`;
     return `${Math.floor(hours / 24)}g önce`;
   }
-  
+
   if (lang === 'ar') {
     if (mins < 1) return 'الآن';
     if (mins < 60) return `منذ ${mins} دقيقة`;
@@ -519,13 +522,13 @@ export default function App() {
       setError(t.error_auth);
       return null;
     }
-    
+
     try {
-      console.log("Starting image upload for:", file.name, "type:", type, "size:", (file.size/1024).toFixed(2), "KB");
+      console.log("Starting image upload for:", file.name, "type:", type, "size:", (file.size / 1024).toFixed(2), "KB");
       setIsUploading(true);
-      
+
       let fileToUpload = file;
-      
+
       /* Skipping compression for now to isolate issues with the library
       try {
         console.log("Attempting compression...");
@@ -540,16 +543,16 @@ export default function App() {
         console.warn("Compression failed, uploading original file:", err);
       }
       */
-      
+
       const storageRef = ref(storage, `${type}-images/${Date.now()}-${file.name}`);
       console.log("Uploading to path:", storageRef.fullPath);
-      
+
       const result = await uploadBytes(storageRef, fileToUpload);
       console.log("Upload resolved:", result.metadata.fullPath);
-      
+
       const downloadURL = await getDownloadURL(storageRef);
       console.log("Obtained download URL:", downloadURL);
-      
+
       setIsUploading(false);
       return downloadURL;
     } catch (error: any) {
@@ -589,7 +592,7 @@ export default function App() {
     if (!localStorage.getItem('deviceId')) {
       localStorage.setItem('deviceId', uuidv4());
     }
-    
+
     // Auto-login from QR Code
     const params = new URLSearchParams(window.location.search);
     const tbl = params.get('table');
@@ -683,7 +686,7 @@ export default function App() {
 
     let intervalId: any = null;
     const hasPendingBill = serviceCalls.some(c => c.type === 'bill' && c.status === 'pending');
-    
+
     if (hasPendingBill) {
       playSound();
       intervalId = setInterval(playSound, 4000); // loop sound for bill every 4s
@@ -698,9 +701,9 @@ export default function App() {
 
     prevOrdersCount.current = liveOrders.length;
     prevCallsCount.current = serviceCalls.length;
-    
+
     return () => {
-       if (intervalId) clearInterval(intervalId);
+      if (intervalId) clearInterval(intervalId);
     };
   }, [isAdmin, liveOrders.length, serviceCalls]);
 
@@ -748,7 +751,7 @@ export default function App() {
       setUser(currentUser);
       if (currentUser) {
         let isVerifiedAdmin = ADMIN_EMAILS.includes(currentUser.email || "");
-        
+
         // Unified Admin Authorization: Check users collection
         if (!isVerifiedAdmin) {
           try {
@@ -812,9 +815,9 @@ export default function App() {
       await setPersistence(auth, browserLocalPersistence);
       const result = await signInWithPopup(auth, provider);
       const currentUser = result.user;
-      
+
       let isVerifiedAdmin = ADMIN_EMAILS.includes(currentUser.email || "");
-      
+
       if (!isVerifiedAdmin) {
         const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
         if (userDoc.exists() && userDoc.data().role === 'admin') {
@@ -1003,22 +1006,22 @@ export default function App() {
   }, [liveOrders]);
 
   const addToCart = async (item: Item, selectedVariant?: ItemVariant) => {
-    const price = selectedVariant?.priceOverride !== undefined && selectedVariant?.priceOverride !== null 
-      ? selectedVariant.priceOverride 
+    const price = selectedVariant?.priceOverride !== undefined && selectedVariant?.priceOverride !== null
+      ? selectedVariant.priceOverride
       : item.price;
-      
+
     const cartItemId = selectedVariant ? `${item.id}-${selectedVariant.label}` : item.id;
-    
+
     const existing = cart.find(i => i.cartItemId === cartItemId);
     let newCart = [];
     if (existing) {
       newCart = cart.map(i => i.cartItemId === cartItemId ? { ...i, quantity: i.quantity + 1 } : i);
     } else {
-      newCart = [...cart, { 
-        ...item, 
-        cartItemId, 
-        price, 
-        quantity: 1, 
+      newCart = [...cart, {
+        ...item,
+        cartItemId,
+        price,
+        quantity: 1,
         selectedVariant,
         name: selectedVariant ? `${item.name} (${selectedVariant.label})` : item.name,
         name_en: item.name_en && selectedVariant ? `${item.name_en} (${selectedVariant.label})` : item.name_en,
@@ -1169,9 +1172,9 @@ export default function App() {
       const snap = await getDocs(q);
       const batch = writeBatch(db);
       snap.docs.forEach((d) => {
-        batch.update(d.ref, { 
+        batch.update(d.ref, {
           paymentStatus: 'paid',
-          status: 'delivered' 
+          status: 'delivered'
         });
       });
       await batch.commit();
@@ -1226,11 +1229,11 @@ export default function App() {
         parsed = { name_en: text, name_ar: text, description_en: '', description_ar: '' };
       }
       if (parsed.variants && item.variants) {
-         parsed.variants = item.variants.map((v, i) => ({
-           ...v,
-           label_en: parsed.variants[i]?.label_en || (v as any).label_en,
-           label_ar: parsed.variants[i]?.label_ar || (v as any).label_ar,
-         }));
+        parsed.variants = item.variants.map((v, i) => ({
+          ...v,
+          label_en: parsed.variants[i]?.label_en || (v as any).label_en,
+          label_ar: parsed.variants[i]?.label_ar || (v as any).label_ar,
+        }));
       }
       return parsed;
     } catch (e: any) {
@@ -1413,22 +1416,21 @@ export default function App() {
           {lastOrder && view !== 'track' && (
             <button
               onClick={() => setView('track')}
-              className={`p-2 md:p-3 rounded-xl transition-colors flex items-center gap-2 ${
-                lastOrder.status === 'pending' ? 'bg-orange-50 text-orange-600 hover:bg-orange-100' :
-                lastOrder.status === 'preparing' ? 'bg-blue-50 text-blue-600 hover:bg-blue-100' :
-                lastOrder.status === 'ready' ? 'bg-green-50 text-green-600 hover:bg-green-100' :
-                'bg-gray-50 text-gray-600 hover:bg-gray-100'
-              }`}
+              className={`p-2 md:p-3 rounded-xl transition-colors flex items-center gap-2 ${lastOrder.status === 'pending' ? 'bg-orange-50 text-orange-600 hover:bg-orange-100' :
+                  lastOrder.status === 'preparing' ? 'bg-blue-50 text-blue-600 hover:bg-blue-100' :
+                    lastOrder.status === 'ready' ? 'bg-green-50 text-green-600 hover:bg-green-100' :
+                      'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                }`}
             >
               {lastOrder.status === 'pending' ? <MapPin size={20} /> :
-               lastOrder.status === 'preparing' ? <ChefHat size={20} /> :
-               lastOrder.status === 'ready' ? <PackageCheck size={20} /> :
-               <Truck size={20} />}
+                lastOrder.status === 'preparing' ? <ChefHat size={20} /> :
+                  lastOrder.status === 'ready' ? <PackageCheck size={20} /> :
+                    <Truck size={20} />}
               <span className="hidden sm:inline text-xs font-bold">
                 {lastOrder.status === 'pending' ? t.pending :
-                 lastOrder.status === 'preparing' ? t.preparing :
-                 lastOrder.status === 'ready' ? t.ready :
-                 t.delivered}
+                  lastOrder.status === 'preparing' ? t.preparing :
+                    lastOrder.status === 'ready' ? t.ready :
+                      t.delivered}
               </span>
             </button>
           )}
@@ -1484,19 +1486,19 @@ export default function App() {
               >
                 {t.start_order}
               </button>
-              
+
               <div className="w-full flex items-center justify-center my-4 opacity-30">
                 <div className="h-px bg-black flex-grow"></div>
                 <span className="px-4 text-xs font-bold uppercase">{lang === 'tr' ? 'veya' : 'OR'}</span>
                 <div className="h-px bg-black flex-grow"></div>
               </div>
-              
+
               <button
                 onClick={async () => {
                   try {
                     const today = new Date().toISOString().split('T')[0];
                     const statsRef = doc(db, 'daily_stats', today);
-                    
+
                     try {
                       // Atomic operation
                       await setDoc(statsRef, { takeaway_count: increment(1) }, { merge: true });
@@ -1504,10 +1506,10 @@ export default function App() {
                       console.warn(`Increment failed [${err?.code}], initializing or falling back`, err);
                       await setDoc(statsRef, { takeaway_count: 1 }, { merge: true });
                     }
-                    
+
                     const snap = await getDoc(statsRef);
                     const count = snap.exists() && snap.data().takeaway_count ? snap.data().takeaway_count : 1;
-                    
+
                     // Each takeaway session gets a unique ID — prevents collisions on repeat orders
                     const virtualTable = `TW-${count}-${uuidv4().slice(0, 6)}`;
                     setTableNumber(virtualTable);
@@ -1604,9 +1606,9 @@ export default function App() {
                   >
                     {isOut && (
                       <div className="absolute inset-0 bg-white/40 flex items-center justify-center z-10 backdrop-blur-[1px]">
-                         <div className="bg-red-600 text-white font-black px-6 py-2 rounded-full uppercase tracking-widest shadow-xl rotate-[-10deg]">
-                            {lang === 'tr' ? 'Tükendi' : (lang === 'ar' ? 'نفذت الكمية' : 'Sold Out')}
-                         </div>
+                        <div className="bg-red-600 text-white font-black px-6 py-2 rounded-full uppercase tracking-widest shadow-xl rotate-[-10deg]">
+                          {lang === 'tr' ? 'Tükendi' : (lang === 'ar' ? 'نفذت الكمية' : 'Sold Out')}
+                        </div>
                       </div>
                     )}
                     <img src={item.image} className="w-24 h-24 md:w-32 md:h-32 object-cover rounded-[1.8rem] flex-shrink-0 shadow-inner" referrerPolicy="no-referrer" alt={getLocalized(item, 'name')} />
@@ -1760,13 +1762,13 @@ export default function App() {
                             number: '1',
                             last_reset_at: Date.now()
                           });
-                          
+
                           // 2. Create daily_stats for today
                           const today = new Date().toISOString().split('T')[0];
                           await setDoc(doc(db, 'daily_stats', today), {
                             takeaway_count: 0
                           }, { merge: true });
-                          
+
                           // 3. Sync current admin to users collection
                           if (user) {
                             await setDoc(doc(db, 'users', user.uid), {
@@ -1775,7 +1777,7 @@ export default function App() {
                               role: 'admin'
                             });
                           }
-                          
+
                           // 4. Create initial category
                           await setDoc(doc(db, 'categories', 'welcome'), {
                             id: 'welcome',
@@ -1911,7 +1913,7 @@ export default function App() {
                   </div>
                   <h3 className="text-3xl font-black mb-2">{lang === 'tr' ? 'Paket Servis İstatistikleri' : (lang === 'ar' ? 'إحصائيات سفري' : 'Takeaway Stats')}</h3>
                   <p className="text-gray-500 mb-8 max-w-sm mx-auto font-medium">{lang === 'tr' ? 'Bugün otomatik olarak oluşturulan toplam paket servis sanal masa sayısı.' : 'Total virtual takeaway tables automatically generated today.'}</p>
-                  
+
                   <div className="text-7xl font-black text-orange-600 mb-3">{takeawayStats}</div>
                   <div className="text-sm font-bold tracking-widest text-gray-400 uppercase">{lang === 'tr' ? 'Bugünün Paket Servis Oranı' : 'Takeaway Count Today'}</div>
                 </div>
@@ -1924,18 +1926,18 @@ export default function App() {
                   <h3 className="text-xl font-black mb-6 flex items-center gap-2">
                     <QrCode className="text-orange-600" /> {lang === 'tr' ? 'Masa Yönetimi' : 'Table Management'}
                   </h3>
-                  
+
                   <div className="flex gap-2 mb-8">
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       placeholder={lang === 'tr' ? 'Masa No (örn: 5)' : 'Table No (e.g., 5)'}
                       className="flex-1 bg-gray-50 border-none rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-orange-500"
                       value={newTableNumber}
                       onChange={(e) => setNewTableNumber(e.target.value)}
                     />
-                    <button 
+                    <button
                       onClick={async () => {
-                        if(!newTableNumber) return;
+                        if (!newTableNumber) return;
                         try {
                           await setDoc(doc(db, 'tables', newTableNumber), {
                             id: newTableNumber,
@@ -1958,9 +1960,9 @@ export default function App() {
                     <div className="bg-orange-50 p-6 rounded-3xl border-2 border-orange-200 relative group flex flex-col items-center">
                       <div className="text-xl font-black mb-2 text-orange-600 uppercase">Takeaway</div>
                       <div className="bg-white p-2 rounded-xl mb-4 shadow-sm">
-                        <QRCodeCanvas 
+                        <QRCodeCanvas
                           id="qr-canvas-takeaway"
-                          value={`${window.location.origin}/?table=takeaway`} 
+                          value={`${window.location.origin}/?table=takeaway`}
                           size={1024}
                           level="H"
                           includeMargin={true}
@@ -1975,7 +1977,7 @@ export default function App() {
                           }}
                         />
                       </div>
-                      <button 
+                      <button
                         onClick={() => downloadQRCode('takeaway')}
                         className="bg-orange-600 text-white p-2 rounded-xl hover:bg-orange-700 transition-all active:scale-95"
                         title="Download Takeaway QR"
@@ -1988,9 +1990,9 @@ export default function App() {
                       <div key={table.id} className="bg-gray-50 p-6 rounded-3xl border border-gray-100 relative group flex flex-col items-center">
                         <div className="text-3xl font-black mb-2">#{table.number}</div>
                         <div className="bg-white p-2 rounded-xl mb-4 shadow-sm">
-                          <QRCodeCanvas 
+                          <QRCodeCanvas
                             id={`qr-canvas-${table.number}`}
-                            value={`${window.location.origin}/?table=${table.number}`} 
+                            value={`${window.location.origin}/?table=${table.number}`}
                             size={1024}
                             level="H"
                             includeMargin={true}
@@ -2006,16 +2008,16 @@ export default function App() {
                           />
                         </div>
                         <div className="flex gap-2">
-                          <button 
+                          <button
                             onClick={() => downloadQRCode(table.number)}
                             className="bg-gray-800 text-white p-2 rounded-xl hover:bg-gray-900 transition-all active:scale-95"
                             title="Download QR"
                           >
                             <QrCode size={18} />
                           </button>
-                          <button 
+                          <button
                             onClick={async () => {
-                              if(confirm("Delete table #" + table.number + "?")) {
+                              if (confirm("Delete table #" + table.number + "?")) {
                                 await deleteDoc(doc(db, 'tables', table.id));
                               }
                             }}
@@ -2060,7 +2062,7 @@ export default function App() {
                                 <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t.total}</div>
                                 <div className="flex items-center gap-4">
                                   <div className="text-4xl font-black text-gray-900 leading-none">₺{tableTotal}</div>
-                                  <button 
+                                  <button
                                     onClick={() => markTableAsPaid(tableNum)}
                                     className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-2xl font-black flex items-center gap-2 shadow-xl shadow-green-100 transition-all active:scale-95"
                                   >
@@ -2588,12 +2590,12 @@ export default function App() {
                     {selectedItem.variants.map((variant, i) => (
                       <label key={i} onClick={(e) => e.stopPropagation()} className={`flex items-center justify-between p-4 rounded-2xl border-2 cursor-pointer transition-colors ${selectedVariant?.label === variant.label ? 'border-orange-500 bg-orange-50' : 'border-gray-100 hover:border-orange-200'}`}>
                         <div className="flex items-center gap-3">
-                          <input 
-                            type="radio" 
-                            className="hidden" 
-                            name="variant" 
-                            checked={selectedVariant?.label === variant.label} 
-                            onChange={() => setSelectedVariant(variant)} 
+                          <input
+                            type="radio"
+                            className="hidden"
+                            name="variant"
+                            checked={selectedVariant?.label === variant.label}
+                            onChange={() => setSelectedVariant(variant)}
                           />
                           <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${selectedVariant?.label === variant.label ? 'border-orange-500' : 'border-gray-300'}`}>
                             {selectedVariant?.label === variant.label && <div className="w-3 h-3 bg-orange-500 rounded-full" />}
@@ -2632,32 +2634,32 @@ export default function App() {
               <textarea className="w-full bg-gray-50 p-4 rounded-2xl outline-none h-24 focus:ring-2 focus:ring-orange-500" value={editingItem.description} onChange={(e) => setEditingItem({ ...editingItem, description: e.target.value })} placeholder="Açıklama (TR)" />
               <div className="space-y-1">
                 <div className="text-[10px] font-black uppercase text-gray-400 ml-2">{t.img_url}</div>
-                <input 
-                  className="w-full bg-gray-50 p-4 rounded-2xl text-xs outline-none focus:ring-2 focus:ring-orange-500 mb-2" 
-                  value={editingItem.image} 
-                  onChange={(e) => setEditingItem({ ...editingItem, image: e.target.value })} 
+                <input
+                  className="w-full bg-gray-50 p-4 rounded-2xl text-xs outline-none focus:ring-2 focus:ring-orange-500 mb-2"
+                  value={editingItem.image}
+                  onChange={(e) => setEditingItem({ ...editingItem, image: e.target.value })}
                   placeholder="https://example.com/image.jpg"
                 />
                 <div className="flex gap-2">
-                  <input 
-                    type="file" 
-                    accept="image/*" 
+                  <input
+                    type="file"
+                    accept="image/*"
                     title="Upload item image"
-                    className="flex-1 bg-gray-50 p-4 rounded-2xl text-xs outline-none focus:ring-2 focus:ring-orange-500" 
+                    className="flex-1 bg-gray-50 p-4 rounded-2xl text-xs outline-none focus:ring-2 focus:ring-orange-500"
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (file) {
                         const url = await handleImageUpload(file, 'item');
                         if (url) setEditingItem({ ...editingItem, image: url });
                       }
-                    }} 
+                    }}
                   />
                   {isUploading && <Loader2 className="animate-spin text-orange-600 self-center" />}
                 </div>
                 {editingItem.image && (
                   <div className="mt-2 relative group">
                     <img src={editingItem.image} className="w-20 h-20 rounded-xl object-cover border border-gray-100" alt="Item preview" />
-                    <button 
+                    <button
                       onClick={() => setEditingItem({ ...editingItem, image: '' })}
                       className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
                       aria-label="Remove image"
@@ -2741,35 +2743,35 @@ export default function App() {
             </div>
             <div className="space-y-4">
               <input className="w-full bg-gray-50 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-orange-500" value={editingCategory.name} onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })} placeholder="Title (TR)" />
-              
+
               <div className="space-y-1">
                 <div className="text-[10px] font-black uppercase text-gray-400 ml-2">{t.img_url}</div>
-                <input 
-                  className="w-full bg-gray-50 p-4 rounded-2xl text-xs outline-none focus:ring-2 focus:ring-orange-500 mb-2" 
-                  value={editingCategory.image} 
-                  onChange={(e) => setEditingCategory({ ...editingCategory, image: e.target.value })} 
+                <input
+                  className="w-full bg-gray-50 p-4 rounded-2xl text-xs outline-none focus:ring-2 focus:ring-orange-500 mb-2"
+                  value={editingCategory.image}
+                  onChange={(e) => setEditingCategory({ ...editingCategory, image: e.target.value })}
                   placeholder="https://example.com/image.jpg"
                 />
                 <div className="flex gap-2">
-                  <input 
-                    type="file" 
-                    accept="image/*" 
+                  <input
+                    type="file"
+                    accept="image/*"
                     title="Upload category image"
-                    className="flex-1 bg-gray-50 p-4 rounded-2xl text-xs outline-none focus:ring-2 focus:ring-orange-500" 
+                    className="flex-1 bg-gray-50 p-4 rounded-2xl text-xs outline-none focus:ring-2 focus:ring-orange-500"
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (file) {
                         const url = await handleImageUpload(file, 'category');
                         if (url) setEditingCategory({ ...editingCategory, image: url });
                       }
-                    }} 
+                    }}
                   />
                   {isUploading && <Loader2 className="animate-spin text-orange-600 self-center" />}
                 </div>
                 {editingCategory.image && (
                   <div className="mt-2 relative group w-20 h-20">
                     <img src={editingCategory.image} className="w-20 h-20 rounded-xl object-cover border border-gray-100" alt="Category preview" />
-                    <button 
+                    <button
                       onClick={() => setEditingCategory({ ...editingCategory, image: '' })}
                       className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
                       aria-label="Remove image"
