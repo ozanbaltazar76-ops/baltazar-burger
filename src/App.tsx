@@ -207,7 +207,8 @@ const TRANSLATIONS: Record<string, any> = {
     in_stock: 'Stokta Var',
     item_variants: 'Ürün Varyantları',
     add_variant: 'Varyant Ekle',
-    variant_label_ex: 'Etiket (örn: 150g)'
+    variant_label_ex: 'Etiket (örn: 150g)',
+    enable_ordering: 'Siparişi Aktif Et'
   },
   en: {
     back: 'Go Back',
@@ -283,7 +284,8 @@ const TRANSLATIONS: Record<string, any> = {
     in_stock: 'In Stock',
     item_variants: 'Item Variants',
     add_variant: 'Add Variant',
-    variant_label_ex: 'Label (ex: 150g)'
+    variant_label_ex: 'Label (ex: 150g)',
+    enable_ordering: 'Enable Ordering System'
   },
   ar: {
     back: 'العودة',
@@ -359,7 +361,8 @@ const TRANSLATIONS: Record<string, any> = {
     in_stock: 'متوفر',
     item_variants: 'خيارات الصنف',
     add_variant: 'إضافة خيار',
-    variant_label_ex: 'الاسم (مثال: ١٥٠غ)'
+    variant_label_ex: 'الاسم (مثال: ١٥٠غ)',
+    enable_ordering: 'تفعيل نظام الطلب'
   }
 };
 
@@ -483,21 +486,9 @@ export default function App() {
   // fetch admins when settings view opens
   useEffect(() => {
     if (adminSubView === 'settings' && isAdmin) {
-      getDoc(doc(db, 'categories', 'admin_settings')).then(snap => {
-        if (snap.exists()) {
-          const data = snap.data();
-          if (data.emails && Array.isArray(data.emails)) {
-            setDbAdmins(data.emails);
-          } else if (data.name) {
-            // Fallback for old JSON string format
-            try {
-              const parsed = JSON.parse(data.name);
-              setDbAdmins(Array.isArray(parsed) ? parsed : []);
-            } catch {
-              setDbAdmins([]);
-            }
-          }
-        }
+      getDocs(collection(db, 'admins')).then(snap => {
+        const emails = snap.docs.map(doc => doc.id);
+        setDbAdmins(emails);
       }).catch(e => console.error(e));
     }
   }, [adminSubView, isAdmin]);
@@ -754,7 +745,19 @@ export default function App() {
       if (currentUser) {
         let isVerifiedAdmin = ADMIN_EMAILS.includes(currentUser.email || "");
 
-        // Unified Admin Authorization: Check users collection
+        // Unified Admin Authorization: Check admins collection
+        if (!isVerifiedAdmin && currentUser.email) {
+          try {
+            const adminDoc = await getDoc(doc(db, 'admins', currentUser.email));
+            if (adminDoc.exists()) {
+              isVerifiedAdmin = true;
+            }
+          } catch (e) {
+            console.error("Admin check failed:", e);
+          }
+        }
+
+        // Check legacy users collection
         if (!isVerifiedAdmin) {
           try {
             const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
@@ -764,26 +767,6 @@ export default function App() {
           } catch (e) {
             console.error("User role check failed:", e);
           }
-        }
-
-        // Legacy Settings Check (as second fallback)
-        if (!isVerifiedAdmin) {
-          try {
-            const docSnap = await getDoc(doc(db, 'categories', 'admin_settings'));
-            if (docSnap.exists()) {
-              const data = docSnap.data();
-              const emails = data.emails || [];
-              if (Array.isArray(emails) && emails.includes(currentUser.email)) {
-                isVerifiedAdmin = true;
-                // Auto-sync this user to the users collection for modern auth
-                await setDoc(doc(db, 'users', currentUser.uid), {
-                  uid: currentUser.uid,
-                  email: currentUser.email,
-                  role: 'admin'
-                }, { merge: true });
-              }
-            }
-          } catch (e) { }
         }
 
         setIsAdmin(isVerifiedAdmin);
@@ -2259,7 +2242,7 @@ export default function App() {
                   </h3>
                   <div className="flex items-center justify-between bg-gray-50 p-4 rounded-2xl">
                     <span className="font-bold flex items-center gap-2">
-                      <ShoppingBag size={20} className="text-orange-600" /> Enable Ordering System
+                      <ShoppingBag size={20} className="text-orange-600" /> {t.enable_ordering}
                     </span>
                     <button
                       onClick={async () => {
@@ -2295,14 +2278,11 @@ export default function App() {
                       onClick={async () => {
                         if (!newAdminEmail || !newAdminEmail.includes('@')) return;
                         try {
-                          const newEmails = [...dbAdmins, newAdminEmail];
-                          await setDoc(doc(db, 'categories', 'admin_settings'), {
-                            id: 'admin_settings',
-                            emails: newEmails,
-                            name: JSON.stringify(newEmails), // Keep for legacy
-                            image: 'fallback'
+                          await setDoc(doc(db, 'admins', newAdminEmail), {
+                            email: newAdminEmail,
+                            addedAt: Date.now()
                           });
-                          setDbAdmins(newEmails);
+                          setDbAdmins([...dbAdmins, newAdminEmail]);
                           setNewAdminEmail('');
                         } catch (err: any) {
                           console.error("Failed to add admin", err);
@@ -2327,14 +2307,8 @@ export default function App() {
                         <button aria-label="Remove admin email"
                           onClick={async () => {
                             try {
-                              const newEmails = dbAdmins.filter(e => e !== email);
-                              await setDoc(doc(db, 'categories', 'admin_settings'), {
-                                id: 'admin_settings',
-                                emails: newEmails,
-                                name: JSON.stringify(newEmails), // Keep for legacy
-                                image: 'fallback'
-                              });
-                              setDbAdmins(newEmails);
+                              await deleteDoc(doc(db, 'admins', email));
+                              setDbAdmins(dbAdmins.filter(e => e !== email));
                             } catch (err: any) {
                               console.error("Failed to remove admin", err);
                               setError(err.message || 'Failed to remove admin email.');

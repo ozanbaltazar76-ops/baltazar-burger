@@ -10,11 +10,12 @@ service cloud.firestore {
     
     function isAdmin() {
       return isAuthenticated() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.token.email)) ||
         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
-        (request.auth.token.email == "adam.osama60@gmail.com" ||
-         request.auth.token.email == "ozanbaltazar76@gmail.com" ||
-         request.auth.token.email == "hakan.4444fb@gmail.com")
+        request.auth.token.email == "adam.osama60@gmail.com" ||
+        request.auth.token.email == "ozanbaltazar76@gmail.com" ||
+        request.auth.token.email == "hakan.4444fb@gmail.com"
       );
     }
 
@@ -65,6 +66,10 @@ service cloud.firestore {
     }
 
     match /settings/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /admins/{email} {
       allow read, write: if isAdmin();
     }
   }
