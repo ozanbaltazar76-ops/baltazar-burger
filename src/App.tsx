@@ -1647,7 +1647,7 @@ export default function App() {
                         >
                           {t.add_to_cart} <Plus size={14} />
                         </button>
-                      )}>
+                      )}
                     </div>
                   </div>
                 );
@@ -2661,7 +2661,7 @@ export default function App() {
                 >
                   {t.add_to_cart} <Plus size={20} />
                 </button>
-              )}>
+              )}
             </div>
           </div>
         </div>
