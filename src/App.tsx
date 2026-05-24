@@ -581,6 +581,7 @@ export default function App() {
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isOrderingEnabled, setIsOrderingEnabled] = useState(true);
 
   const t = TRANSLATIONS[lang];
   const isRtl = lang === 'ar';
@@ -888,10 +889,25 @@ export default function App() {
       setTables(ts);
     }, (err) => handleFirestoreError(err, OperationType.LIST, 'tables'));
 
+    // Settings
+    const unsubscribeSettings = onSnapshot(doc(db, 'settings', 'siteConfig'), (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data.isOrderingEnabled !== undefined) {
+          setIsOrderingEnabled(data.isOrderingEnabled);
+        }
+      } else {
+        if (isAdmin) {
+          setDoc(doc(db, 'settings', 'siteConfig'), { isOrderingEnabled: true }, { merge: true });
+        }
+      }
+    });
+
     return () => {
       unsubscribeCats();
       unsubscribeItems();
       unsubscribeTables();
+      unsubscribeSettings();
     };
   }, [isAdmin, handleFirestoreError]);
 
@@ -1405,7 +1421,7 @@ export default function App() {
             ))}
           </div>
 
-          {cart.length > 0 && view !== 'cart' && (
+          {isOrderingEnabled && cart.length > 0 && view !== 'cart' && (
             <button onClick={() => setView('cart')} className="relative p-2 md:p-3 bg-orange-600 text-white rounded-xl shadow-lg transition-transform active:scale-95">
               <ShoppingCart size={20} />
               <span className="absolute -top-1 -right-1 bg-white text-orange-600 text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-orange-600 animate-in zoom-in">
@@ -1623,13 +1639,15 @@ export default function App() {
                           {desc}
                         </p>
                       </div>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); if (!isOut) addToCart(item); }}
-                        disabled={isOut}
-                        className="w-max bg-orange-50 text-orange-600 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest hover:bg-orange-600 hover:text-white transition-all flex items-center gap-1 mt-2 disabled:opacity-50"
-                      >
-                        {t.add_to_cart} <Plus size={14} />
-                      </button>
+                      {isOrderingEnabled && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); if (!isOut) addToCart(item); }}
+                          disabled={isOut}
+                          className="w-max bg-orange-50 text-orange-600 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest hover:bg-orange-600 hover:text-white transition-all flex items-center gap-1 mt-2 disabled:opacity-50"
+                        >
+                          {t.add_to_cart} <Plus size={14} />
+                        </button>
+                      )}>
                     </div>
                   </div>
                 );
@@ -2237,6 +2255,32 @@ export default function App() {
               <div className="animate-in fade-in max-w-2xl mx-auto space-y-6">
                 <div className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm">
                   <h3 className="text-xl font-black mb-6 flex items-center gap-2">
+                    <Settings className="text-orange-600" /> Site Settings
+                  </h3>
+                  <div className="flex items-center justify-between bg-gray-50 p-4 rounded-2xl">
+                    <span className="font-bold flex items-center gap-2">
+                      <ShoppingBag size={20} className="text-orange-600" /> Enable Ordering System
+                    </span>
+                    <button
+                      onClick={async () => {
+                        try {
+                          await setDoc(doc(db, 'settings', 'siteConfig'), {
+                            isOrderingEnabled: !isOrderingEnabled
+                          }, { merge: true });
+                        } catch (err: any) {
+                          console.error("Failed to update ordering settings", err);
+                          setError(err.message || 'Failed to update settings.');
+                        }
+                      }}
+                      className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 ${isOrderingEnabled ? 'bg-orange-600' : 'bg-gray-200'}`}
+                    >
+                      <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${isOrderingEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm">
+                  <h3 className="text-xl font-black mb-6 flex items-center gap-2">
                     <Settings className="text-orange-600" /> {t.admin_emails}
                   </h3>
                   <div className="flex gap-2 mb-6">
@@ -2610,12 +2654,14 @@ export default function App() {
                 </div>
               )}
 
-              <button
-                onClick={() => { addToCart(selectedItem, selectedVariant || undefined); setSelectedItem(null); }}
-                className="w-full mt-auto bg-orange-600 text-white px-6 py-4 rounded-2xl font-black text-lg shadow-xl shadow-orange-100 hover:bg-orange-700 active:scale-95 transition-all flex items-center justify-center gap-2"
-              >
-                {t.add_to_cart} <Plus size={20} />
-              </button>
+              {isOrderingEnabled && (
+                <button
+                  onClick={() => { addToCart(selectedItem, selectedVariant || undefined); setSelectedItem(null); }}
+                  className="w-full mt-auto bg-orange-600 text-white px-6 py-4 rounded-2xl font-black text-lg shadow-xl shadow-orange-100 hover:bg-orange-700 active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  {t.add_to_cart} <Plus size={20} />
+                </button>
+              )}>
             </div>
           </div>
         </div>
