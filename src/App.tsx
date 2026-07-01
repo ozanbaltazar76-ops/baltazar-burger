@@ -1468,7 +1468,7 @@ export default function App() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto p-4 md:p-8 lg:p-12">
-        {view === 'welcome' && (
+        {view === 'welcome' && !isLoading && (
           <div className="flex flex-col items-center justify-center py-10 md:py-20 animate-in zoom-in-95 max-w-sm mx-auto">
             <h2 className="text-4xl font-black mb-2 text-center text-orange-600">{t.welcome_title}</h2>
             <p className="text-gray-500 mb-10 text-center font-bold px-4">{t.welcome_desc}</p>
@@ -1547,7 +1547,7 @@ export default function App() {
           </div>
         )}
 
-        {isLoading && view !== 'welcome' && (
+        {isLoading && (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <Loader2 className="w-12 h-12 text-orange-600 animate-spin" />
             <p className="text-gray-400 font-bold animate-pulse">Loading menu...</p>
@@ -1965,6 +1965,38 @@ export default function App() {
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {/* Menu Only QR Card */}
+                    <div className="bg-blue-50 p-6 rounded-3xl border-2 border-blue-200 relative group flex flex-col items-center">
+                      <div className="text-xl font-black mb-2 text-blue-600 uppercase text-center leading-tight">
+                        {lang === 'tr' ? 'Sadece Menü' : 'Menu Only'}
+                      </div>
+                      <div className="bg-white p-2 rounded-xl mb-4 shadow-sm">
+                        <QRCodeCanvas
+                          id="qr-canvas-menu-only"
+                          value={`${window.location.origin}/`}
+                          size={1024}
+                          level="H"
+                          includeMargin={true}
+                          style={{ width: '120px', height: '120px' }}
+                          imageSettings={{
+                            src: "/logo.png",
+                            x: undefined,
+                            y: undefined,
+                            height: 256,
+                            width: 256,
+                            excavate: true,
+                          }}
+                        />
+                      </div>
+                      <button
+                        onClick={() => downloadQRCode('menu-only')}
+                        className="bg-blue-600 text-white p-2 rounded-xl hover:bg-blue-700 transition-all active:scale-95"
+                        title="Download Menu Only QR"
+                      >
+                        <QrCode size={18} />
+                      </button>
+                    </div>
+
                     {/* Takeaway QR Card */}
                     <div className="bg-orange-50 p-6 rounded-3xl border-2 border-orange-200 relative group flex flex-col items-center">
                       <div className="text-xl font-black mb-2 text-orange-600 uppercase">Takeaway</div>
