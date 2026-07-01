@@ -574,6 +574,13 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isOrderingEnabled, setIsOrderingEnabled] = useState(true);
 
+  // When ordering is disabled, automatically skip the welcome screen (table selection)
+  useEffect(() => {
+    if (!isOrderingEnabled && (view === 'welcome' || view === 'cart')) {
+      setView('menu');
+    }
+  }, [isOrderingEnabled, view]);
+
   const t = TRANSLATIONS[lang];
   const isRtl = lang === 'ar';
 
