@@ -572,14 +572,15 @@ export default function App() {
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [isOrderingEnabled, setIsOrderingEnabled] = useState(true);
 
-  // When ordering is disabled, automatically skip the welcome screen (table selection)
+  // When ordering is disabled AND settings have loaded, automatically skip the welcome screen
   useEffect(() => {
-    if (!isOrderingEnabled && (view === 'welcome' || view === 'cart')) {
+    if (settingsLoaded && !isOrderingEnabled && (view === 'welcome' || view === 'cart')) {
       setView('menu');
     }
-  }, [isOrderingEnabled, view]);
+  }, [isOrderingEnabled, settingsLoaded, view]);
 
   const t = TRANSLATIONS[lang];
   const isRtl = lang === 'ar';
@@ -888,9 +889,13 @@ export default function App() {
         }
       } else {
         if (isAdmin) {
-          setDoc(doc(db, 'settings', 'siteConfig'), { isOrderingEnabled: true }, { merge: true });
+          setDoc(doc(db, 'settings', 'siteConfig'), { isOrderingEnabled: true }, { merge: true }).catch(() => {});
         }
       }
+      setSettingsLoaded(true);
+    }, (error) => {
+      console.error('Settings read error:', error);
+      setSettingsLoaded(true);
     });
 
     return () => {
@@ -1468,7 +1473,7 @@ export default function App() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto p-4 md:p-8 lg:p-12">
-        {view === 'welcome' && !isLoading && (
+        {view === 'welcome' && !isLoading && settingsLoaded && (
           <div className="flex flex-col items-center justify-center py-10 md:py-20 animate-in zoom-in-95 max-w-sm mx-auto">
             <h2 className="text-4xl font-black mb-2 text-center text-orange-600">{t.welcome_title}</h2>
             <p className="text-gray-500 mb-10 text-center font-bold px-4">{t.welcome_desc}</p>
@@ -1547,7 +1552,7 @@ export default function App() {
           </div>
         )}
 
-        {isLoading && (
+        {(isLoading || !settingsLoaded) && view !== 'admin' && (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <Loader2 className="w-12 h-12 text-orange-600 animate-spin" />
             <p className="text-gray-400 font-bold animate-pulse">Loading menu...</p>
